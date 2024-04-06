@@ -13,7 +13,7 @@ end
 
 function redraw()
   screen.clear()
-  render()
+  -- do stuff
   screen.update()
 end
 
