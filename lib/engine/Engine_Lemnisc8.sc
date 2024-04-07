@@ -2,7 +2,7 @@
 // Undecided on whether this is needed
 
 // Inherit methods from CroneEngine
-Engine_Asterion : CroneEngine {
+Engine_Lemnisc8 : CroneEngine {
   var <synth, params;
 
   *new { arg context, doneCallback;
