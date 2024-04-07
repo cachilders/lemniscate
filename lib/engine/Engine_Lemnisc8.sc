@@ -11,7 +11,9 @@ Engine_Lemnisc8 : CroneEngine {
 
   alloc {
     SynthDef(\Lemnisc8, {
-      
+      // engine is probably just a noise drone for adding tape hiss
+      // and machine hum, which i'd forgotten was a thing
+      // maybe enable the chunky servo click on program change (optional)
     }).add;
 
     context.server.sync;
