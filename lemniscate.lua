@@ -5,7 +5,7 @@ local util = require('util')
 
 local ASSET_PATH = '/home/we/dust/code/lemniscate/assets/bg_frames/'
 local MAX_PROGRAM_LENGTH = 87
-local MIN_PROGRAM_LENGTH = 2
+local MIN_PROGRAM_LENGTH = 1
 local MAX_BG_FRAMES = 6
 local position = 1
 local program = 1
@@ -126,7 +126,7 @@ local function refresh_foreground()
   local x, y = program_cells[program][1], program_cells[program][2]
   local width, height = program_cell_dimensions[1], program_cell_dimensions[2]
   screen.rect(x, y, width, height)
-  screen.fill()
+  -- screen.fill()
   screen.move(x + math.floor(width/2), y - 5)
   if playing == 1 then
     screen.text('▶')
@@ -139,8 +139,7 @@ end
 
 local function refresh_program()
   softcut.query_position(1)
-  -- TODO: Bug. First program 1 step shorter because it starts at 1th index
-    program = math.floor(position // program_length) + 1
+  program = math.ceil(position / program_length)
 end
 
 local function set_tape_length(d)
@@ -148,7 +147,8 @@ local function set_tape_length(d)
   tape_length = 4 * program_length
   
   for i = 1, 2 do
-    softcut.loop_end(i, tape_length)
+    -- Loop should be inclusive of final second
+    softcut.loop_end(i, tape_length + 1)
   end
 
   position = util.clamp(position, 1, program_length)
