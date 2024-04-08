@@ -3,7 +3,9 @@
 
 local util = require('util')
 
+local ASSET_PATH = '/home/we/dust/code/lemniscate/assets/bg_frames/'
 local MAX_PROGRAM_LENGTH = 87
+local MAX_BG_FRAMES = 6
 local position = 1
 local program = 1
 local program_length = 10
@@ -15,6 +17,14 @@ local preserve_amp = 0.7
 local shift = false
 local playing = 0
 local recording = 0
+local bg_frame = 1
+local frame_clock = nil
+
+local function _animate_background()
+  if playing == 1 or recording == 1 then
+    bg_frame = util.wrap(bg_frame + 1, 1, MAX_BG_FRAMES)
+  end
+end
 
 local function _refresh_position(i, pos)
   position = math.floor(pos)
@@ -26,6 +36,11 @@ local function _set_head_position()
   end
 
   softcut.voice_sync(2, 1, 0)
+end
+
+local function init_animation()
+  frame_clock = metro.init(_animate_background, 1/12)
+  frame_clock:start()
 end
 
 local function init_softcut()
@@ -95,6 +110,10 @@ local function program_select(n)
   _set_head_position()
 end
 
+local function refresh_background()
+  screen.display_png(ASSET_PATH..bg_frame..'.png', 0, 0)
+end
+
 local function refresh_program()
   softcut.query_position(1)
   if position > program_length then
@@ -139,6 +158,7 @@ end
   
 
 function init()
+  init_animation()
   init_softcut()
   toggle_play()
   toggle_record()
@@ -170,6 +190,7 @@ end
 function redraw()
   screen.clear()
   refresh_program()
+  refresh_background()
   temp_render_text()
   screen.update()
 end
