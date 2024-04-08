@@ -5,6 +5,7 @@ local util = require('util')
 
 local ASSET_PATH = '/home/we/dust/code/lemniscate/assets/bg_frames/'
 local MAX_PROGRAM_LENGTH = 87
+local MIN_PROGRAM_LENGTH = 2
 local MAX_BG_FRAMES = 6
 local position = 1
 local program = 1
@@ -19,6 +20,13 @@ local playing = 0
 local recording = 0
 local bg_frame = 1
 local frame_clock = nil
+local program_cell_dimensions = {3, 14}
+local program_cells = {
+  {74, 26},
+  {78, 26},
+  {82, 26},
+  {86, 26}
+}
 
 local function _animate_background()
   if playing == 1 or recording == 1 then
@@ -114,17 +122,29 @@ local function refresh_background()
   screen.display_png(ASSET_PATH..bg_frame..'.png', 0, 0)
 end
 
-local function refresh_program()
-  softcut.query_position(1)
-  if position > program_length then
-    program = math.floor(position // program_length) + 1
-  else
-    program = 1
+local function refresh_foreground()
+  local x, y = program_cells[program][1], program_cells[program][2]
+  local width, height = program_cell_dimensions[1], program_cell_dimensions[2]
+  screen.rect(x, y, width, height)
+  screen.fill()
+  screen.move(x + math.floor(width/2), y - 5)
+  if playing == 1 then
+    screen.text('▶')
+  end
+  screen.move(x + math.floor(width/2), y + height + 10)
+  if recording == 1 then
+    screen.text('°')
   end
 end
 
+local function refresh_program()
+  softcut.query_position(1)
+  -- TODO: Bug. First program 1 step shorter because it starts at 1th index
+    program = math.floor(position // program_length) + 1
+end
+
 local function set_tape_length(d)
-  program_length = util.clamp(program_length + d, 1, MAX_PROGRAM_LENGTH)
+  program_length = util.clamp(program_length + d, MIN_PROGRAM_LENGTH, MAX_PROGRAM_LENGTH)
   tape_length = 4 * program_length
   
   for i = 1, 2 do
@@ -191,7 +211,9 @@ function redraw()
   screen.clear()
   refresh_program()
   refresh_background()
-  temp_render_text()
+  refresh_foreground()
+  -- temp_render_text()
+  screen.stroke()
   screen.update()
 end
 
