@@ -7,7 +7,7 @@ local MAX_PROGRAM_LENGTH = 87
 local position = 1
 local program = 1
 local program_length = 10
-local tape_length = program_length * 4
+local tape_length = 40
 local source_amp = 1.0
 local play_amp = 1.0
 local rec_amp = 1.0
@@ -106,6 +106,8 @@ end
 
 local function set_tape_length(d)
   program_length = util.clamp(program_length + d, 1, MAX_PROGRAM_LENGTH)
+  tape_length = 4 * program_length
+  
   for i = 1, 2 do
     softcut.loop_end(i, tape_length)
   end
@@ -116,10 +118,14 @@ end
 
 local function temp_render_text()
   screen.move(64, 12)
-  screen.text_center('PROGRAM '..program)
+  screen.text_center('PROGRAM LENGTH '..program_length..'s')
   screen.move(64, 22)
-  screen.text_center('POSITION '..position)
+  screen.text_center('TAPE LENGTH '..tape_length..'s')
   screen.move(64, 32)
+  screen.text_center('PROGRAM '..program)
+  screen.move(64, 42)
+  screen.text_center('POSITION '..position)
+  screen.move(64, 52)
   if playing == 0 and recording == 0 then
     screen.text_center('PAUSED')
   elseif playing == 0 then
@@ -140,7 +146,9 @@ function init()
 end
 
 function enc(e, d)
-  -- set program length
+  if e == 3 then
+    set_tape_length(d)
+  end
 end
 
 function key(k, z)
