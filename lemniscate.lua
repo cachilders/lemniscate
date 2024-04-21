@@ -5,6 +5,7 @@
 -- k3 -> program select
 
 local util = require('util')
+local Parameters = include('lib/parameters')
 
 local ASSET_PATH = '/home/we/dust/code/lemniscate/assets/bg_frames/'
 local MAX_PROGRAM_LENGTH = 87
@@ -12,27 +13,26 @@ local MIN_PROGRAM_LENGTH = 1
 local MAX_TAPE_VISUALIVATION_WIDTH = 24
 local MIN_TAPE_VISUALIZATION_WIDTH = MAX_TAPE_VISUALIVATION_WIDTH / (MAX_PROGRAM_LENGTH * 4)
 local MAX_BG_FRAMES = 6
-local position = 1
-local program = 1
-local program_length = 10
-local tape_length = 40
-local tape_visualization_width = 8
-local source_amp = 1.0
-local play_amp = 1.0
-local rec_amp = 1.0
-local preserve_amp = 0.8
-local shift = false
-local playing = 0
-local recording = 0
-local bg_frame = 1
-local frame_clock = nil
-local program_cell_dimensions = {3, 14}
-local program_cells = {
+local PROGRAM_CELL_DIMENSIONS = {3, 14}
+local PROGRAM_CELLS = {
   {74, 26},
   {78, 26},
   {82, 26},
   {86, 26}
 }
+
+local bg_frame = 1
+local frame_clock = nil
+local parameters = nil
+local playing = 0
+local position = 1
+local program = 1
+local program_length = 10
+local rec_amp = 1.0
+local shift = false
+local tape_length = 40
+local tape_visualization_width = 8
+local recording = 0
 
 local function _animate_background()
   if playing == 1 or recording == 1 then
@@ -56,11 +56,32 @@ local function _set_tape_width()
   tape_visualization_width = math.floor(tape_length * MIN_TAPE_VISUALIZATION_WIDTH) + 6
 end
 
-
 local function init_animation()
   frame_clock = metro.init(_animate_background, 1/12)
   frame_clock:start()
 end
+
+local function init_params()
+  local set_param = {
+    play_amp = function(val)
+      for i = 1, 2 do
+        softcut.level(i, val)
+      end
+    end,
+    preserve_amp = function(val)
+      for i = 1, 2 do
+        softcut.pre_level(i, val)
+      end
+    end,
+    source_amp = function(val)
+      for i = 1, 2 do
+        softcut.level_input_cut(i, 1, val)
+      end
+    end,
+  }
+
+  Parameters.init(set_param)
+end 
 
 local function init_softcut()
   audio.level_adc_cut(1)
@@ -69,14 +90,16 @@ local function init_softcut()
   for i = 1, 2 do
     softcut.enable(i, 1)
     softcut.buffer(i, i)
-    softcut.level(i, play_amp)
+    softcut.fade_time(i, 0)
+    softcut.level(i, params:get('play_amp'))
+    softcut.level_slew_time(i, 0)
     softcut.loop(i, 1)
     softcut.loop_start(i, 1)
     softcut.loop_end(i, tape_length)
-    softcut.pre_level(i, preserve_amp)
+    softcut.pre_level(i, params:get('preserve_amp'))
     softcut.rec_level(i, rec_amp)
     softcut.position(i, position)
-    softcut.level_input_cut(i, i, source_amp)
+    softcut.level_input_cut(i, 1, params:get('source_amp'))
   end
 end
 
@@ -117,7 +140,6 @@ local function stop_all()
   _set_head_position()
 end
 
-
 local function program_select(n)
   local segment_position = position - get_program_offset()
 
@@ -143,8 +165,9 @@ end
 
 local function refresh_foreground()
   -- Variable Program Elements
-  local x, y = program_cells[program][1], program_cells[program][2]
-  local width, height = program_cell_dimensions[1], program_cell_dimensions[2]
+  if not screen then print('nope') end
+  local x, y = PROGRAM_CELLS[program][1], PROGRAM_CELLS[program][2]
+  local width, height = PROGRAM_CELL_DIMENSIONS[1], PROGRAM_CELL_DIMENSIONS[2]
   local program_center = x + math.floor(width/2)
   local program_length_string = format_time(program_length)
   local program_length_string_center = math.floor(screen.text_extents(program_length_string) / 2)
@@ -220,6 +243,7 @@ local function set_tape_length(d)
 end
 
 function init()
+  init_params()
   init_animation()
   init_softcut()
   toggle_play()
