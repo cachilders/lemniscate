@@ -61,8 +61,20 @@ local function init_animation()
   frame_clock:start()
 end
 
+local function init_audio()
+  audio.level_adc_cut(1)
+  audio.level_eng_cut(0)
+  audio.level_tape_cut(0)
+end
+
 local function init_params()
   local set_param = {
+    filter_cutoff = function(val)
+      for i = 1, 2 do
+        print(i, val)
+        softcut.pre_filter_fc(i, val)
+      end
+    end,
     play_amp = function(val)
       for i = 1, 2 do
         softcut.level(i, val)
@@ -77,20 +89,21 @@ local function init_params()
       for i = 1, 2 do
         softcut.level_input_cut(i, 1, val)
       end
-    end,
+    end
   }
 
   Parameters.init(set_param)
 end 
 
 local function init_softcut()
-  audio.level_adc_cut(1)
   softcut.buffer_clear()
   softcut.event_position(_refresh_position)
   for i = 1, 2 do
     softcut.enable(i, 1)
     softcut.buffer(i, i)
-    softcut.fade_time(i, 0)
+    softcut.pre_filter_fc(i, params:get('filter_cutoff'))
+    softcut.pre_filter_dry(i, 0.5)
+    softcut.pre_filter_lp(i, 1)
     softcut.level(i, params:get('play_amp'))
     softcut.level_slew_time(i, 0)
     softcut.loop(i, 1)
@@ -245,6 +258,7 @@ end
 function init()
   init_params()
   init_animation()
+  init_audio()
   init_softcut()
   toggle_play()
   toggle_record()
