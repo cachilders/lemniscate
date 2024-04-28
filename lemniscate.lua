@@ -3,6 +3,7 @@
 -- k2 -> toggle play
 -- k1 + k3 -> stop all
 -- k3 -> program select
+-- k1 + k2 + k3 -> clear buffer
 
 local util = require('util')
 local Parameters = include('lib/parameters')
@@ -21,7 +22,9 @@ local PROGRAM_CELLS = {
   {86, 26}
 }
 
+local alt = false
 local bg_frame = 1
+local clear_time = 0.75
 local frame_clock = nil
 local parameters = nil
 local playing = 0
@@ -32,6 +35,7 @@ local rec_amp = 1.0
 local shift = false
 local tape_length = 40
 local tape_visualization_width = 8
+local throttle_keys = false
 local recording = 0
 
 local function _animate_background()
@@ -71,7 +75,6 @@ local function init_params()
   local set_param = {
     filter_cutoff = function(val)
       for i = 1, 2 do
-        print(i, val)
         softcut.pre_filter_fc(i, val)
       end
     end,
@@ -140,6 +143,19 @@ local function toggle_record()
   softcut.voice_sync(2, 1, 0)
 end
 
+local function clear_all()
+  throttle_keys = true
+
+  clock.run(function()
+    clock.sleep(clear_time)
+    throttle_keys = false
+  end)
+  
+  alt = false
+  shift = false
+  softcut.buffer_clear()
+end
+
 local function stop_all()
   for i = 1, 2 do
     softcut.play(i, 0)
@@ -161,7 +177,7 @@ local function program_select(n)
   else
     program = util.wrap(program + 1, 1, 4)
   end
-
+  
   position = segment_position + get_program_offset()
   _set_head_position()
 end
@@ -178,7 +194,6 @@ end
 
 local function refresh_foreground()
   -- Variable Program Elements
-  if not screen then print('nope') end
   local x, y = PROGRAM_CELLS[program][1], PROGRAM_CELLS[program][2]
   local width, height = PROGRAM_CELL_DIMENSIONS[1], PROGRAM_CELL_DIMENSIONS[2]
   local program_center = x + math.floor(width/2)
@@ -260,8 +275,6 @@ function init()
   init_animation()
   init_audio()
   init_softcut()
-  toggle_play()
-  toggle_record()
   redraw()
 end
 
@@ -272,18 +285,25 @@ function enc(e, d)
 end
 
 function key(k, z)
-  if k == 1 and z == 1 then
-    shift = true
-  elseif k == 1 and z == 0 then
-    shift = false
-  elseif k == 2 and z == 0 and not shift then
-    toggle_play()
-  elseif k== 2 and z == 0 and shift then
-    toggle_record()
-  elseif k == 3 and z == 0 and not shift then
-    program_select()
-  elseif k == 3 and z == 0 and shift then
-    stop_all()
+  if not throttle_keys then
+    if k == 1 and z == 1 then
+      shift = true
+    elseif k == 1 and z == 0 then
+      alt = false
+      shift = false
+    elseif k == 2 and z == 1 and shift then
+      alt = true    
+    elseif k == 2 and z == 0 and not shift then
+      toggle_play()
+    elseif k== 2 and z == 0 and shift then
+      toggle_record()
+    elseif k == 3 and z == 0 and not shift then
+      program_select()
+    elseif k == 3 and z == 0 and shift and not alt then
+      stop_all()
+    elseif k == 3 and z == 1 and shift and alt then
+      clear_all()
+    end
   end
 end
 
