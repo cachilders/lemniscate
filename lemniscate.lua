@@ -3,6 +3,7 @@
 -- k2 -> toggle play
 -- k1 + k3 -> stop all
 -- k3 -> program select
+-- k1 + k2 + k3 -> clear buffer
 
 local util = require('util')
 local Parameters = include('lib/parameters')
@@ -21,7 +22,9 @@ local PROGRAM_CELLS = {
   {86, 26}
 }
 
+local alt = false
 local bg_frame = 1
+local clear_time = 0.75
 local frame_clock = nil
 local parameters = nil
 local playing = 0
@@ -29,13 +32,18 @@ local position = 1
 local program = 1
 local program_length = 10
 local rec_amp = 1.0
+local recording = 0
 local shift = false
 local tape_length = 40
 local tape_visualization_width = 8
-local recording = 0
+local throttle_keys = false
+
+local function _bin_to_bool(v)
+  return v == 1
+end
 
 local function _animate_background()
-  if playing == 1 or recording == 1 then
+  if _bin_to_bool(playing) or _bin_to_bool(recording) then
     bg_frame = util.wrap(bg_frame + 1, 1, MAX_BG_FRAMES)
   end
 end
@@ -71,7 +79,6 @@ local function init_params()
   local set_param = {
     filter_cutoff = function(val)
       for i = 1, 2 do
-        print(i, val)
         softcut.pre_filter_fc(i, val)
       end
     end,
@@ -140,6 +147,19 @@ local function toggle_record()
   softcut.voice_sync(2, 1, 0)
 end
 
+local function clear_all()
+  throttle_keys = true
+
+  clock.run(function()
+    clock.sleep(clear_time)
+    throttle_keys = false
+  end)
+  
+  alt = false
+  shift = false
+  softcut.buffer_clear()
+end
+
 local function stop_all()
   for i = 1, 2 do
     softcut.play(i, 0)
@@ -178,7 +198,6 @@ end
 
 local function refresh_foreground()
   -- Variable Program Elements
-  if not screen then print('nope') end
   local x, y = PROGRAM_CELLS[program][1], PROGRAM_CELLS[program][2]
   local width, height = PROGRAM_CELL_DIMENSIONS[1], PROGRAM_CELL_DIMENSIONS[2]
   local program_center = x + math.floor(width/2)
@@ -210,15 +229,15 @@ local function refresh_foreground()
   screen.line(90, y + height + 8)
   screen.line(100, y + height + 8)
   screen.move_rel(0, 6)
-  if recording == 1 then
+  if _bin_to_bool(recording) then
     screen.level(((position % 7) + 1) * 2)
     screen.font_face(21)
     screen.font_size(18)
     screen.text('•')
     screen.level(16)
   end
-  if playing == 1 then
-    screen.move_rel(recording == 1 and 0 or 4, -4)
+  if _bin_to_bool(playing) then
+    screen.move_rel(_bin_to_bool(recording) and 0 or 4, -4)
     screen.font_face(1)
     screen.font_size(8)
     screen.text('▶')
@@ -237,8 +256,10 @@ local function refresh_foreground()
 end
 
 local function refresh_program()
-  softcut.query_position(1)
-  program = math.ceil(position / program_length)
+  if _bin_to_bool(playing) or _bin_to_bool(recording) then
+    softcut.query_position(1)
+    program = math.ceil(position / program_length)
+  end
 end
 
 local function set_tape_length(d)
@@ -260,8 +281,6 @@ function init()
   init_animation()
   init_audio()
   init_softcut()
-  toggle_play()
-  toggle_record()
   redraw()
 end
 
@@ -272,18 +291,25 @@ function enc(e, d)
 end
 
 function key(k, z)
-  if k == 1 and z == 1 then
-    shift = true
-  elseif k == 1 and z == 0 then
-    shift = false
-  elseif k == 2 and z == 0 and not shift then
-    toggle_play()
-  elseif k== 2 and z == 0 and shift then
-    toggle_record()
-  elseif k == 3 and z == 0 and not shift then
-    program_select()
-  elseif k == 3 and z == 0 and shift then
-    stop_all()
+  if not throttle_keys then
+    if k == 1 and z == 1 then
+      shift = true
+    elseif k == 1 and z == 0 then
+      alt = false
+      shift = false
+    elseif k == 2 and z == 1 and shift then
+      alt = true    
+    elseif k == 2 and z == 0 and not shift then
+      toggle_play()
+    elseif k== 2 and z == 0 and shift then
+      toggle_record()
+    elseif k == 3 and z == 0 and not shift then
+      program_select()
+    elseif k == 3 and z == 0 and shift and not alt then
+      stop_all()
+    elseif k == 3 and z == 1 and shift and alt then
+      clear_all()
+    end
   end
 end
 
