@@ -32,14 +32,19 @@ local position = 1
 local program = 1
 local program_length = 10
 local rec_amp = 1.0
+local recording = 0
+local selecting = false
 local shift = false
 local tape_length = 40
 local tape_visualization_width = 8
 local throttle_keys = false
-local recording = 0
+
+local function _bin_to_bool(v)
+  return v == 1
+end
 
 local function _animate_background()
-  if playing == 1 or recording == 1 then
+  if _bin_to_bool(playing) or _bin_to_bool(recording) then
     bg_frame = util.wrap(bg_frame + 1, 1, MAX_BG_FRAMES)
   end
 end
@@ -177,7 +182,7 @@ local function program_select(n)
   else
     program = util.wrap(program + 1, 1, 4)
   end
-  
+
   position = segment_position + get_program_offset()
   _set_head_position()
 end
@@ -225,15 +230,15 @@ local function refresh_foreground()
   screen.line(90, y + height + 8)
   screen.line(100, y + height + 8)
   screen.move_rel(0, 6)
-  if recording == 1 then
+  if _bin_to_bool(recording) then
     screen.level(((position % 7) + 1) * 2)
     screen.font_face(21)
     screen.font_size(18)
     screen.text('•')
     screen.level(16)
   end
-  if playing == 1 then
-    screen.move_rel(recording == 1 and 0 or 4, -4)
+  if _bin_to_bool(playing) then
+    screen.move_rel(_bin_to_bool(recording) and 0 or 4, -4)
     screen.font_face(1)
     screen.font_size(8)
     screen.text('▶')
@@ -252,8 +257,10 @@ local function refresh_foreground()
 end
 
 local function refresh_program()
-  softcut.query_position(1)
-  program = math.ceil(position / program_length)
+  if _bin_to_bool(playing) or _bin_to_bool(recording) then
+    softcut.query_position(1)
+    program = math.ceil(position / program_length)
+  end
 end
 
 local function set_tape_length(d)
