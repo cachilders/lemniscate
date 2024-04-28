@@ -33,7 +33,6 @@ local program = 1
 local program_length = 10
 local rec_amp = 1.0
 local recording = 0
-local selecting = false
 local shift = false
 local tape_length = 40
 local tape_visualization_width = 8
