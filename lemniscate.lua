@@ -8,6 +8,8 @@
 local util = require('util')
 local Parameters = include('lib/parameters')
 
+engine.name = 'Lemnisc8'
+
 local ASSET_PATH = '/home/we/dust/code/lemniscate/assets/bg_frames/'
 local MAX_PROGRAM_LENGTH = 87
 local MIN_PROGRAM_LENGTH = 1
@@ -70,6 +72,8 @@ local function init_animation()
 end
 
 local function init_audio()
+  audio.rev_off()
+  audio.comp_off()
   audio.level_adc_cut(1)
   audio.level_eng_cut(0)
   audio.level_tape_cut(0)
@@ -165,6 +169,8 @@ local function stop_all()
     softcut.play(i, 0)
     softcut.rec(i, 0)
   end
+
+  engine.play('eject', 1)
 
   position = 1
   program = 1
