@@ -1,35 +1,37 @@
 // Lemnisc8_Engine
-// Undecided on whether this is needed
 
-// Inherit methods from CroneEngine
 Engine_Lemnisc8 : CroneEngine {
-  var <synth, params;
+  var <synth;
 
   *new { arg context, doneCallback;
     ^super.new(context, doneCallback);
   }
 
   alloc {
+    var buffers, file_ext, file_names, path;
+    file_ext = ".wav";
+	  file_names = ["machine", "eject", "insert", "program_select", "record"];
+    path = "/home/we/dust/code/lemniscate/assets/samples/";
+    buffers = Dictionary.new;
+    file_names.do({ arg key, i;
+      buffers.put(key.asSymbol, Buffer.read(context.server, path ++ key ++ file_ext));
+    });
+
     SynthDef(\Lemnisc8, {
-      // engine is probably just a noise drone for adding tape hiss
-      // and machine hum, which i'd forgotten was a thing
-      // maybe enable the chunky servo click on program change (optional)
+      arg amp=1.0, buf=0, loop=0, t_trig=1;
+	    var sample = PlayBuf.ar(1, buf, trigger: t_trig, doneAction: 2);
+      Out.ar(0, Splay.ar([sample]));
     }).add;
 
     context.server.sync;
 
-    synth = Synth(\Lemnisc8, target:context.server);
-
-    params = Dictionary.newFrom([]);
-    
-    params.keysDo({ arg key;
-      this.addCommand(key, "f", { arg msg;
-        synth.set(key, msg[1])
-      });
+    this.addCommand(\play, "sf", {
+      arg msg;
+      Synth.new(\Lemnisc8, [buf: buffers[msg[1]], amp: msg[2]], context.server);
     });
   }
 
   free {
-    synth.free;
+    context.server.freeAll;
   }
 }
