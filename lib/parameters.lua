@@ -15,7 +15,7 @@ local loop_parameters = {
 }
 
 function Parameters.init(set_param)
-  params:add_group('lemniscate_loop', 'LEMNISCATE (loop)', #loop_parameters)
+  params:add_group('lemniscate_loop', 'LEMNISCATE', #loop_parameters)
   for i = 1, #loop_parameters do
     local parameter = loop_parameters[i]
 
@@ -38,7 +38,13 @@ function Parameters.init(set_param)
     end
     params:set_action(parameter.id, function(val) print(parameter.id);set_param[parameter.id](val) end)
   end
-
+  params:add_group('lemniscate_ux', 'LEMNISCATE (ux)', 1)
+  params:add_control(
+    'lem_skeuo_amp',
+    'Skeuomorph Amp',
+    ControlSpec.new(0, 1, 'lin', 0, 0),
+    function(param) return quantize_and_format(param:get()*100, 1, '%') end
+  )
   params:bang()
 end
 

@@ -136,9 +136,9 @@ local function toggle_play()
 
 
   if _bin_to_bool(playing) then
-    engine.play('eject', 1)
+    engine.play('eject', params:get('lem_skeuo_amp'))
   else
-    engine.play('insert', 1)
+    engine.play('insert', params:get('lem_skeuo_amp'))
   end
 
   for i = 1, 2 do
@@ -151,7 +151,7 @@ end
 local function toggle_record()
   recording = util.wrap(recording + 1, 0, 1)
 
-  engine.play('record', 1)
+  engine.play('record', params:get('lem_skeuo_amp'))
 
   for i = 1, 2 do
     softcut.rec(i, recording)
@@ -179,7 +179,7 @@ local function stop_all()
     softcut.rec(i, 0)
   end
 
-  engine.play('eject', 1)
+  engine.play('eject', params:get('lem_skeuo_amp'))
 
   position = 1
   program = 1
@@ -191,7 +191,7 @@ end
 local function program_select(n)
   local segment_position = position - get_program_offset()
 
-  engine.play('program_select', 1)
+  engine.play('program_select', params:get('lem_skeuo_amp'))
 
   if n then
     program = n
