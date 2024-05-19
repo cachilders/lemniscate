@@ -20,7 +20,7 @@ Engine_Lemnisc8 : CroneEngine {
     SynthDef(\Lemnisc8, {
       arg amp=1.0, buf=0, loop=0, t_trig=1;
 	    var sample = PlayBuf.ar(1, buf, trigger: t_trig, doneAction: 2);
-      Out.ar(0, Splay.ar([sample]));
+      Out.ar(0, Splay.ar([sample]) * amp);
     }).add;
 
     context.server.sync;

@@ -1,3 +1,5 @@
+-- Nothing here. Boilerplate just in case.
+
 local Lemnisc8 = {}
 local ControlSpec = require 'controlspec'
 local Formatters = require 'formatters'

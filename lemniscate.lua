@@ -1,4 +1,5 @@
 -- lemniscate
+-- enc3 -> loop length
 -- k1 + k2 -> toggle record
 -- k2 -> toggle play
 -- k1 + k3 -> stop all
@@ -134,6 +135,13 @@ end
 local function toggle_play()
   playing = util.wrap(playing + 1, 0, 1)
 
+
+  if _bin_to_bool(playing) then
+    engine.play('eject', params:get('lem_skeuo_amp'))
+  else
+    engine.play('insert', params:get('lem_skeuo_amp'))
+  end
+
   for i = 1, 2 do
     softcut.play(i, playing)
   end
@@ -143,6 +151,8 @@ end
 
 local function toggle_record()
   recording = util.wrap(recording + 1, 0, 1)
+
+  engine.play('record', params:get('lem_skeuo_amp'))
 
   for i = 1, 2 do
     softcut.rec(i, recording)
@@ -170,7 +180,7 @@ local function stop_all()
     softcut.rec(i, 0)
   end
 
-  engine.play('eject', 1)
+  engine.play('eject', params:get('lem_skeuo_amp'))
 
   position = 1
   program = 1
@@ -181,6 +191,8 @@ end
 
 local function program_select(n)
   local segment_position = position - get_program_offset()
+
+  engine.play('program_select', params:get('lem_skeuo_amp'))
 
   if n then
     program = n
@@ -306,8 +318,14 @@ function key(k, z)
     elseif k == 2 and z == 1 and shift then
       alt = true    
     elseif k == 2 and z == 0 and not shift then
+      if _bin_to_bool(playing) and _bin_to_bool(recording) then
+        toggle_record()
+      end
       toggle_play()
     elseif k== 2 and z == 0 and shift then
+      if not _bin_to_bool(playing) and not _bin_to_bool(recording) then
+        toggle_play()
+      end
       toggle_record()
     elseif k == 3 and z == 0 and not shift then
       program_select()
