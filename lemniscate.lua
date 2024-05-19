@@ -1,4 +1,5 @@
 -- lemniscate
+-- enc3 -> loop length
 -- k1 + k2 -> toggle record
 -- k2 -> toggle play
 -- k1 + k3 -> stop all

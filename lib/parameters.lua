@@ -36,7 +36,7 @@ function Parameters.init(set_param)
         parameter.formatter
       )
     end
-    params:set_action(parameter.id, function(val) print(parameter.id);set_param[parameter.id](val) end)
+    params:set_action(parameter.id, function(val) set_param[parameter.id](val) end)
   end
   params:add_group('lemniscate_ux', 'LEMNISCATE (ux)', 1)
   params:add_control(
