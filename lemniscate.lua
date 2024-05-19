@@ -134,6 +134,13 @@ end
 local function toggle_play()
   playing = util.wrap(playing + 1, 0, 1)
 
+
+  if _bin_to_bool(playing) then
+    engine.play('eject', 1)
+  else
+    engine.play('insert', 1)
+  end
+
   for i = 1, 2 do
     softcut.play(i, playing)
   end
@@ -143,6 +150,8 @@ end
 
 local function toggle_record()
   recording = util.wrap(recording + 1, 0, 1)
+
+  engine.play('record', 1)
 
   for i = 1, 2 do
     softcut.rec(i, recording)
@@ -181,6 +190,8 @@ end
 
 local function program_select(n)
   local segment_position = position - get_program_offset()
+
+  engine.play('program_select', 1)
 
   if n then
     program = n
@@ -306,8 +317,14 @@ function key(k, z)
     elseif k == 2 and z == 1 and shift then
       alt = true    
     elseif k == 2 and z == 0 and not shift then
+      if _bin_to_bool(playing) and _bin_to_bool(recording) then
+        toggle_record()
+      end
       toggle_play()
     elseif k== 2 and z == 0 and shift then
+      if not _bin_to_bool(playing) and not _bin_to_bool(recording) then
+        toggle_play()
+      end
       toggle_record()
     elseif k == 3 and z == 0 and not shift then
       program_select()
